@@ -293,10 +293,8 @@ class BilibiliAPI:
                     all_videos.extend(archives)
                     logger.info(f"获取视频列表 {series_id} 第 {page} 页，共 {len(archives)} 个视频")
 
-                    # 检查是否还有更多
-                    meta = data.get("data", {}).get("meta", {})
-                    total = meta.get("total", 0)
-                    if len(all_videos) >= total:
+                    # 如果返回的视频数量少于page_size，说明已经是最后一页
+                    if len(archives) < 30:
                         break
 
                     page += 1

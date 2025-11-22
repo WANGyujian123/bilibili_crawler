@@ -163,12 +163,26 @@ python3 main.py analyze <UID> --analysis-type style
 python3 main.py analyze <UID> --max-videos 20
 ```
 
-### 5. 查看结果
+### 5. 查看和导出结果
 
-查看已保存的分析结果：
-
+**在终端查看**（默认）：
 ```bash
 python3 main.py show <UID>
+```
+
+**导出为Markdown文件**（推荐用于学习）：
+```bash
+python3 main.py show <UID> --format markdown --output reports/分析报告.md
+```
+
+**导出为JSON文件**（用于数据分析）：
+```bash
+python3 main.py show <UID> --format json --output reports/数据.json
+```
+
+**在终端预览Markdown格式**：
+```bash
+python3 main.py show <UID> --format markdown
 ```
 
 ## 完整使用流程示例
@@ -273,6 +287,14 @@ A: 可以使用 `python3 main.py show <UID>` 查看结果，也可以直接查�
 - SQLite: 数据存储
 - Click: 命令行界面
 - Loguru: 日志记录
+
+## 学习资源
+
+本项目提供了完整的商业财经分析学习资源：
+
+- [UP主商业财经分析方法论](docs/UP主商业财经分析方法论.md) - 提取UP主的核心分析框架和知识体系
+- [学习实践指南](docs/学习实践指南.md) - 12个月系统学习路径
+- [获取Cookie指南](docs/GET_COOKIE.md) - 手动获取B站Cookie的方法
 
 ## 许可证
 

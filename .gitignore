@@ -35,6 +35,9 @@ data/
 logs/
 *.log
 
+# 导出的报告（用户自己生成）
+reports/
+
 # IDE
 .vscode/
 .idea/

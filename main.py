@@ -262,41 +262,71 @@ def analyze(uid: str, max_videos: int, analysis_type: str):
 
 @cli.command()
 @click.argument('uid')
-def show(uid: str):
-    """查看UP主的分析结果
+@click.option('--format', '-f', type=click.Choice(['text', 'markdown', 'json']),
+              default='text', help='输出格式')
+@click.option('--output', '-o', type=click.Path(), help='输出文件路径（留空则输出到终端）')
+def show(uid: str, format: str, output: str):
+    """查看UP主的分析结果，支持导出为Markdown或JSON
 
     UID: UP主的用户ID
     """
+    from analyzer import AnalysisExporter
+
     db = Database()
 
     # 获取UP主信息
     user_info = db.get_user(uid)
     if not user_info:
         logger.error(f"数据库中没有UP主 {uid} 的信息")
+        db.close()
         return
 
-    click.echo(f"\nUP主: {user_info['name']}")
-    click.echo(f"签名: {user_info.get('sign', 'N/A')}")
-    click.echo(f"粉丝: {user_info.get('follower', 0)}")
+    # 根据格式导出
+    exporter = AnalysisExporter(db)
 
-    # 获取视频统计
-    videos = db.get_user_videos(uid)
-    click.echo(f"\n视频数量: {len(videos)}")
+    try:
+        if format == 'markdown':
+            if output:
+                result = exporter.export_to_markdown(uid, output)
+                click.echo(f"✓ Markdown报告已导出到: {result}")
+            else:
+                content = exporter.export_to_markdown(uid)
+                click.echo(content)
 
-    # 获取分析结果
-    analyses = db.get_user_analysis(uid)
-    if analyses:
-        click.echo(f"\n分析结果 ({len(analyses)} 条):\n")
-        for analysis in analyses:
-            click.echo("="*60)
-            click.echo(f"{analysis['analysis_type']} ({analysis['created_at']})")
-            click.echo("="*60)
-            click.echo(analysis['analysis_result'])
-            click.echo()
-    else:
-        click.echo("\n还没有分析结果")
+        elif format == 'json':
+            if output:
+                result = exporter.export_to_json(uid, output)
+                click.echo(f"✓ JSON报告已导出到: {result}")
+            else:
+                content = exporter.export_to_json(uid)
+                click.echo(content)
 
-    db.close()
+        else:  # text format (原有逻辑)
+            click.echo(f"\nUP主: {user_info['name']}")
+            click.echo(f"签名: {user_info.get('sign', 'N/A')}")
+            click.echo(f"粉丝: {user_info.get('follower', 0)}")
+
+            # 获取视频统计
+            videos = db.get_user_videos(uid)
+            click.echo(f"\n视频数量: {len(videos)}")
+
+            # 获取分析结果
+            analyses = db.get_user_analysis(uid)
+            if analyses:
+                click.echo(f"\n分析结果 ({len(analyses)} 条):\n")
+                for analysis in analyses:
+                    click.echo("="*60)
+                    click.echo(f"{analysis['analysis_type']} ({analysis['created_at']})")
+                    click.echo("="*60)
+                    click.echo(analysis['analysis_result'])
+                    click.echo()
+            else:
+                click.echo("\n还没有分析结果")
+    except Exception as e:
+        logger.error(f"导出失败: {e}")
+        click.echo(f"❌ 导出失败: {e}")
+    finally:
+        db.close()
 
 
 @cli.command()

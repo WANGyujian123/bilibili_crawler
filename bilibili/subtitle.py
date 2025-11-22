@@ -9,6 +9,16 @@ import config
 class SubtitleDownloader:
     """字幕下载器"""
 
+    # 字幕语言优先级（从高到低）
+    SUBTITLE_PRIORITY = [
+        'zh-CN',      # 中文（官方）
+        'ai-zh',      # AI生成中文
+        'zh-Hans',    # 简体中文
+        'zh-Hant',    # 繁体中文
+        'ai-en',      # AI生成英文
+        'en',         # 英文
+    ]
+
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update(config.BILIBILI_HEADERS)
@@ -84,12 +94,12 @@ class SubtitleDownloader:
 
     def get_video_subtitle(self, bvid: str, cid: int, lang: str = "zh-CN") -> Optional[str]:
         """
-        获取视频的完整字幕文本
+        获取视频的完整字幕文本（带智能fallback）
 
         Args:
             bvid: 视频BV号
             cid: 视频CID
-            lang: 字幕语言，默认中文
+            lang: 字幕语言，默认中文（会自动尝试其他语言）
 
         Returns:
             完整字幕文本，失败返回None
@@ -99,37 +109,53 @@ class SubtitleDownloader:
         if not subtitle_info:
             return None
 
-        # 查找指定语言的字幕
+        # 获取所有可用字幕
         subtitles = subtitle_info.get("subtitles", [])
         if not subtitles:
             logger.warning(f"视频 {bvid} 没有可用的字幕")
             return None
 
-        # 优先使用指定语言，否则使用第一个可用字幕
-        subtitle_url = None
-        for sub in subtitles:
-            if sub.get("lan") == lang:
-                subtitle_url = sub.get("subtitle_url")
-                break
+        # 构建可用字幕的映射 {语言代码: 字幕URL}
+        available_subtitles = {
+            sub.get("lan"): sub.get("subtitle_url")
+            for sub in subtitles
+            if sub.get("lan") and sub.get("subtitle_url")
+        }
 
-        if not subtitle_url and subtitles:
-            subtitle_url = subtitles[0].get("subtitle_url")
-            logger.info(f"未找到 {lang} 字幕，使用 {subtitles[0].get('lan')} 字幕")
+        logger.debug(f"视频 {bvid} 可用字幕: {list(available_subtitles.keys())}")
 
-        if not subtitle_url:
-            logger.error("无法获取字幕URL")
-            return None
+        # 按优先级尝试下载字幕
+        tried_langs = []
+        for priority_lang in self.SUBTITLE_PRIORITY:
+            if priority_lang in available_subtitles:
+                subtitle_url = available_subtitles[priority_lang]
+                tried_langs.append(priority_lang)
 
-        # 下载字幕
-        subtitle_body = self.download_subtitle(subtitle_url)
-        if not subtitle_body:
-            return None
+                # 尝试下载
+                subtitle_body = self.download_subtitle(subtitle_url)
+                if subtitle_body:
+                    if priority_lang != lang:
+                        logger.info(f"未找到 {lang} 字幕，使用 {priority_lang} 字幕")
 
-        # 合并字幕文本
-        full_text = " ".join([item.get("content", "") for item in subtitle_body])
-        logger.info(f"字幕总长度: {len(full_text)} 字符")
+                    # 合并字幕文本
+                    full_text = " ".join([item.get("content", "") for item in subtitle_body])
+                    logger.info(f"字幕总长度: {len(full_text)} 字符")
+                    return full_text
+                else:
+                    logger.warning(f"下载 {priority_lang} 字幕失败，尝试下一个")
 
-        return full_text
+        # 如果优先级列表中的语言都失败了，尝试其他可用语言
+        for lang_code, subtitle_url in available_subtitles.items():
+            if lang_code not in tried_langs:
+                logger.info(f"尝试非优先级语言: {lang_code}")
+                subtitle_body = self.download_subtitle(subtitle_url)
+                if subtitle_body:
+                    full_text = " ".join([item.get("content", "") for item in subtitle_body])
+                    logger.info(f"使用 {lang_code} 字幕，字幕总长度: {len(full_text)} 字符")
+                    return full_text
+
+        logger.error(f"视频 {bvid} 所有字幕都下载失败")
+        return None
 
     def get_subtitle_with_timeline(self, bvid: str, cid: int, lang: str = "zh-CN") -> Optional[List[Dict]]:
         """
