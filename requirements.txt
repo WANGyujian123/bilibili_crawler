@@ -1,0 +1,18 @@
+# B站爬虫依赖
+requests>=2.31.0
+httpx>=0.25.0
+
+# AI分析
+anthropic>=0.25.0
+
+# 数据处理
+pandas>=2.0.0
+
+# 命令行界面
+click>=8.1.0
+
+# 环境变量管理
+python-dotenv>=1.0.0
+
+# 日志
+loguru>=0.7.0
