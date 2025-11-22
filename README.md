@@ -11,82 +11,36 @@
 - SQLite数据库存储，方便查询和管理
 - 命令行界面，操作简单直观
 
-## 快速开始（推荐）
+## 快速开始
 
-项目提供了便捷的脚本来快速设置和使用：
-
-### 1. 一键环境设置
+### 1. 创建虚拟环境并安装依赖
 
 ```bash
 cd bilibili_crawler
-./setup.sh
+python3 -m venv venv
+./venv/bin/pip install -r requirements.txt
 ```
-
-这个脚本会自动：
-- 检查并创建Python虚拟环境
-- 安装所有依赖（使用清华镜像源加速）
-- 创建配置文件模板
 
 ### 2. 配置API密钥
 
-编辑 `.env` 文件，填入你的Claude API密钥：
-
 ```bash
-nano .env  # 或使用你喜欢的编辑器
+cp .env.example .env
+nano .env  # 编辑文件，填入你的Claude API密钥
 ```
 
-```env
-CLAUDE_API_KEY=your_claude_api_key_here
-```
-
-> 如何获取Claude API密钥：访问 [Anthropic Console](https://console.anthropic.com/) 注册并获取API密钥
+> 如何获取Claude API密钥：访问 [Anthropic Console](https://console.anthropic.com/)
 
 ### 3. 开始使用
 
 ```bash
-# 使用便捷脚本运行（推荐）
-./run.sh --help
-./run.sh crawl 9458053 --max-videos 10 --with-subtitle
-./run.sh analyze 9458053
-
-# 或者激活虚拟环境后使用
-source activate.sh
+# 方式1：激活虚拟环境后使用
+source venv/bin/activate
 python3 main.py --help
-```
+python3 main.py crawl 9458053 --max-videos 10 --with-subtitle
+python3 main.py analyze 9458053
 
----
-
-## 手动安装（可选）
-
-如果你不想使用自动化脚本，也可以手动设置：
-
-### 1. 进入项目目录
-
-```bash
-cd bilibili_crawler
-```
-
-### 2. 创建虚拟环境
-
-```bash
-python3 -m venv venv
-```
-
-### 3. 安装依赖
-
-```bash
-# 使用清华镜像源加速（推荐）
-./venv/bin/pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-# 或使用默认源
-./venv/bin/pip install -r requirements.txt
-```
-
-### 4. 配置环境变量
-
-```bash
-cp .env.example .env
-# 编辑 .env 文件填入API密钥
+# 方式2：直接使用虚拟环境中的Python
+./venv/bin/python3 main.py --help
 ```
 
 ## 使用方法
@@ -94,7 +48,9 @@ cp .env.example .env
 ### 基本命令
 
 ```bash
-python main.py --help
+# 激活虚拟环境（推荐）
+source venv/bin/activate
+python3 main.py --help
 ```
 
 ### 1. 爬取UP主内容
@@ -102,19 +58,19 @@ python main.py --help
 爬取UP主的视频信息：
 
 ```bash
-python main.py crawl <UID>
+python3 main.py crawl <UID>
 ```
 
 同时下载字幕：
 
 ```bash
-python main.py crawl <UID> --with-subtitle
+python3 main.py crawl <UID> --with-subtitle
 ```
 
 限制爬取数量：
 
 ```bash
-python main.py crawl <UID> --max-videos 20
+python3 main.py crawl <UID> --max-videos 20
 ```
 
 **如何获取UP主的UID：**
@@ -127,13 +83,13 @@ python main.py crawl <UID> --max-videos 20
 为已爬取的视频单独下载字幕：
 
 ```bash
-python main.py download-subtitle <UID>
+python3 main.py download-subtitle <UID>
 ```
 
 指定下载数量：
 
 ```bash
-python main.py download-subtitle <UID> --max-videos 10
+python3 main.py download-subtitle <UID> --max-videos 10
 ```
 
 ### 3. 分析内容
@@ -142,22 +98,22 @@ python main.py download-subtitle <UID> --max-videos 10
 
 ```bash
 # 综合分析（包括思想、主题、风格）
-python main.py analyze <UID>
+python3 main.py analyze <UID>
 
 # 仅思想分析
-python main.py analyze <UID> --analysis-type ideology
+python3 main.py analyze <UID> --analysis-type ideology
 
 # 仅主题分析
-python main.py analyze <UID> --analysis-type themes
+python3 main.py analyze <UID> --analysis-type themes
 
 # 仅风格分析
-python main.py analyze <UID> --analysis-type style
+python3 main.py analyze <UID> --analysis-type style
 ```
 
 指定分析的视频数量：
 
 ```bash
-python main.py analyze <UID> --max-videos 20
+python3 main.py analyze <UID> --max-videos 20
 ```
 
 ### 4. 查看结果
@@ -165,7 +121,7 @@ python main.py analyze <UID> --max-videos 20
 查看已保存的分析结果：
 
 ```bash
-python main.py show <UID>
+python3 main.py show <UID>
 ```
 
 ## 完整使用流程示例
@@ -174,16 +130,16 @@ python main.py show <UID>
 
 ```bash
 # 1. 爬取UP主的视频信息（最多20个视频）
-python main.py crawl 123456 --max-videos 20 --with-subtitle
+python3 main.py crawl 123456 --max-videos 20 --with-subtitle
 
 # 2. 如果第一步没有加--with-subtitle，可以单独下载字幕
-python main.py download-subtitle 123456
+python3 main.py download-subtitle 123456
 
 # 3. 进行综合分析
-python main.py analyze 123456 --max-videos 10
+python3 main.py analyze 123456 --max-videos 10
 
 # 4. 查看分析结果
-python main.py show 123456
+python3 main.py show 123456
 ```
 
 ## 项目结构
@@ -243,7 +199,7 @@ A: 取决于视频数量和字幕长度。一般10个视频的综合分析需要
 A: 可以。每个UP主的数据独立存储，可以对多个UP主分别进行爬取和分析。
 
 ### Q: 如何导出分析结果？
-A: 可以使用 `python main.py show <UID>` 查看结果，也可以直接查询SQLite数据库的 `analysis` 表。
+A: 可以使用 `python3 main.py show <UID>` 查看结果，也可以直接查询SQLite数据库的 `analysis` 表。
 
 ## 开发者信息
 
