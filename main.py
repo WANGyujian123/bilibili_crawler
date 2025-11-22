@@ -394,5 +394,89 @@ def list_series(uid: str):
         click.echo()
 
 
+@cli.command()
+@click.argument('bvid')
+@click.option('--output', '-o', type=click.Path(), help='输出文件路径（留空则输出到终端）')
+def query(bvid: str, output: str):
+    """查询单个视频的详细信息和字幕
+
+    BVID: 视频的BV号（如：BV1WxnYzTEi2）
+    """
+    db = Database()
+
+    try:
+        # 查询视频信息
+        cursor = db.cursor
+        cursor.execute("""
+            SELECT v.bvid, v.uid, v.title, v.description, v.duration, v.pubdate,
+                   v.view_count, v.like_count, v.coin_count, v.share_count
+            FROM videos v
+            WHERE v.bvid = ?
+        """, (bvid,))
+
+        video = cursor.fetchone()
+
+        if not video:
+            click.echo(f"❌ 未找到视频 {bvid}")
+            return
+
+        # 查询字幕
+        cursor.execute("""
+            SELECT subtitle_text, subtitle_lang
+            FROM subtitles
+            WHERE bvid = ?
+        """, (bvid,))
+
+        subtitle = cursor.fetchone()
+
+        # 格式化输出
+        content = []
+        content.append("="*60)
+        content.append("视频详细信息")
+        content.append("="*60)
+        content.append(f"\n📹 BV号: {video[0]}")
+        content.append(f"👤 UP主UID: {video[1]}")
+        content.append(f"📝 标题: {video[2]}")
+        content.append(f"📄 简介: {video[3] or '无'}")
+        content.append(f"⏱️  时长: {video[4]}秒")
+        content.append(f"📅 发布时间: {video[5]}")
+        content.append(f"👀 播放量: {video[6] or '未知'}")
+        content.append(f"👍 点赞数: {video[7] or '未知'}")
+        content.append(f"🪙 投币数: {video[8] or '未知'}")
+        content.append(f"🔗 分享数: {video[9] or '未知'}")
+
+        if subtitle:
+            subtitle_text, subtitle_lang = subtitle
+            content.append(f"\n{'='*60}")
+            content.append("字幕信息")
+            content.append("="*60)
+            content.append(f"\n🌐 语言: {subtitle_lang}")
+            content.append(f"📊 总长度: {len(subtitle_text)} 字符")
+            content.append(f"\n{'='*60}")
+            content.append("完整字幕内容")
+            content.append("="*60)
+            content.append(f"\n{subtitle_text}")
+            content.append(f"\n{'='*60}")
+        else:
+            content.append("\n❌ 该视频无字幕")
+
+        output_text = "\n".join(content)
+
+        # 输出或保存
+        if output:
+            Path(output).parent.mkdir(parents=True, exist_ok=True)
+            with open(output, 'w', encoding='utf-8') as f:
+                f.write(output_text)
+            click.echo(f"✓ 视频信息已导出到: {output}")
+        else:
+            click.echo(output_text)
+
+    except Exception as e:
+        logger.error(f"查询视频失败: {e}")
+        click.echo(f"❌ 查询失败: {e}")
+    finally:
+        db.close()
+
+
 if __name__ == '__main__':
     cli()

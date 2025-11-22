@@ -185,6 +185,27 @@ python3 main.py show <UID> --format json --output reports/数据.json
 python3 main.py show <UID> --format markdown
 ```
 
+### 6. 查询单个视频
+
+查看单个视频的详细信息和完整字幕：
+
+```bash
+# 在终端查看
+python3 main.py query <BVID>
+
+# 导出到文件
+python3 main.py query <BVID> --output reports/视频字幕.txt
+```
+
+**示例**：
+```bash
+# 查看BV1WxnYzTEi2的字幕
+python3 main.py query BV1WxnYzTEi2
+
+# 导出到文件
+python3 main.py query BV1WxnYzTEi2 -o reports/比特币分析.txt
+```
+
 ## 完整使用流程示例
 
 ### 示例1：分析UP主的某个合集
