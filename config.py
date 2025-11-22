@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).parent
 
 # Claude API配置
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY", "")
+CLAUDE_API_BASE_URL = os.getenv("CLAUDE_API_BASE_URL", "")  # 代理站API地址（可选）
 CLAUDE_MODEL = "claude-sonnet-4-5-20250929"  # 使用最新的Claude模型
 
 # B站API配置

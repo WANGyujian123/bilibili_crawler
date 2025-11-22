@@ -28,7 +28,18 @@ cp .env.example .env
 nano .env  # 编辑文件，填入你的Claude API密钥
 ```
 
-> 如何获取Claude API密钥：访问 [Anthropic Console](https://console.anthropic.com/)
+**配置说明：**
+
+```env
+# Claude API配置
+CLAUDE_API_KEY=your_api_key_here
+
+# 如果使用代理站，填入代理地址
+CLAUDE_API_BASE_URL=https://api.your-proxy.com/v1
+```
+
+> - **官方API**：访问 [Anthropic Console](https://console.anthropic.com/) 获取密钥，不需要填写 `CLAUDE_API_BASE_URL`
+> - **代理站**：填入代理站提供的API密钥和代理地址
 
 ### 3. 开始使用
 

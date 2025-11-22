@@ -8,20 +8,31 @@ import config
 class ClaudeAnalyzer:
     """Claude文本分析器"""
 
-    def __init__(self, api_key: str = None):
+    def __init__(self, api_key: str = None, base_url: str = None):
         """
         初始化Claude分析器
 
         Args:
             api_key: Claude API密钥
+            base_url: API代理地址（可选）
         """
         self.api_key = api_key or config.CLAUDE_API_KEY
         if not self.api_key:
             raise ValueError("未设置CLAUDE_API_KEY，请在.env文件中配置")
 
-        self.client = Anthropic(api_key=self.api_key)
+        # 获取base_url，如果提供了参数则使用参数，否则从配置读取
+        self.base_url = base_url or config.CLAUDE_API_BASE_URL
+
+        # 初始化客户端
+        if self.base_url:
+            self.client = Anthropic(api_key=self.api_key, base_url=self.base_url)
+            logger.info(f"Claude分析器初始化完成，使用代理: {self.base_url}")
+        else:
+            self.client = Anthropic(api_key=self.api_key)
+            logger.info("Claude分析器初始化完成，使用官方API")
+
         self.model = config.CLAUDE_MODEL
-        logger.info(f"Claude分析器初始化完成，使用模型: {self.model}")
+        logger.info(f"使用模型: {self.model}")
 
     def analyze_text(self, text: str, prompt: str, max_tokens: int = 4096) -> Optional[str]:
         """
