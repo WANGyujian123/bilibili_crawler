@@ -168,3 +168,145 @@ class BilibiliAPI:
         if video_info and "cid" in video_info:
             return video_info["cid"]
         return None
+
+    def get_user_series_list(self, uid: str) -> Optional[Dict]:
+        """
+        获取UP主的合集和视频列表
+
+        Args:
+            uid: UP主的UID
+
+        Returns:
+            包含seasons_list和series_list的字典
+        """
+        url = f"{self.api_base}/x/polymer/web-space/seasons_series_list"
+        params = {
+            "mid": uid,
+            "page_num": 1,
+            "page_size": 20
+        }
+
+        try:
+            time.sleep(0.5)
+            response = self.session.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            if data.get("code") == 0:
+                logger.info(f"成功获取UP主 {uid} 的合集列表")
+                return data.get("data", {}).get("items_lists", {})
+            else:
+                logger.error(f"获取合集列表失败: {data.get('message')}")
+                return None
+
+        except Exception as e:
+            logger.error(f"请求合集列表时出错: {e}")
+            return None
+
+    def get_season_videos(self, season_id: int) -> List[Dict]:
+        """
+        获取合集中的所有视频
+
+        Args:
+            season_id: 合集ID
+
+        Returns:
+            视频列表
+        """
+        url = f"{self.api_base}/x/polymer/web-space/seasons_archives_list"
+        all_videos = []
+        page = 1
+
+        while True:
+            params = {
+                "season_id": season_id,
+                "page_num": page,
+                "page_size": 30
+            }
+
+            try:
+                time.sleep(0.5)
+                response = self.session.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+
+                if data.get("code") == 0:
+                    archives = data.get("data", {}).get("archives", [])
+                    if not archives:
+                        break
+
+                    all_videos.extend(archives)
+                    logger.info(f"获取合集 {season_id} 第 {page} 页，共 {len(archives)} 个视频")
+
+                    # 检查是否还有更多
+                    meta = data.get("data", {}).get("meta", {})
+                    total = meta.get("total", 0)
+                    if len(all_videos) >= total:
+                        break
+
+                    page += 1
+                else:
+                    logger.error(f"获取合集视频失败: {data.get('message')}")
+                    break
+
+            except Exception as e:
+                logger.error(f"请求合集视频时出错: {e}")
+                break
+
+        logger.info(f"合集 {season_id} 共获取 {len(all_videos)} 个视频")
+        return all_videos
+
+    def get_series_videos(self, series_id: int, uid: str) -> List[Dict]:
+        """
+        获取视频列表中的所有视频
+
+        Args:
+            series_id: 视频列表ID
+            uid: UP主UID
+
+        Returns:
+            视频列表
+        """
+        url = f"{self.api_base}/x/series/archives"
+        all_videos = []
+        page = 1
+
+        while True:
+            params = {
+                "mid": uid,
+                "series_id": series_id,
+                "pn": page,
+                "ps": 30
+            }
+
+            try:
+                time.sleep(0.5)
+                response = self.session.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+
+                if data.get("code") == 0:
+                    archives = data.get("data", {}).get("archives", [])
+                    if not archives:
+                        break
+
+                    all_videos.extend(archives)
+                    logger.info(f"获取视频列表 {series_id} 第 {page} 页，共 {len(archives)} 个视频")
+
+                    # 检查是否还有更多
+                    meta = data.get("data", {}).get("meta", {})
+                    total = meta.get("total", 0)
+                    if len(all_videos) >= total:
+                        break
+
+                    page += 1
+                else:
+                    logger.error(f"获取视频列表失败: {data.get('message')}")
+                    break
+
+            except Exception as e:
+                logger.error(f"请求视频列表时出错: {e}")
+                break
+
+        logger.info(f"视频列表 {series_id} 共获取 {len(all_videos)} 个视频")
+        return all_videos

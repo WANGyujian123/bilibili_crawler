@@ -40,7 +40,9 @@ def cli():
 @click.argument('uid')
 @click.option('--max-videos', '-m', type=int, default=None, help='最多爬取的视频数量')
 @click.option('--with-subtitle', '-s', is_flag=True, help='同时下载字幕')
-def crawl(uid: str, max_videos: int, with_subtitle: bool):
+@click.option('--season-id', type=int, default=None, help='指定合集ID（先用list-series查看）')
+@click.option('--series-id', type=int, default=None, help='指定视频列表ID（先用list-series查看）')
+def crawl(uid: str, max_videos: int, with_subtitle: bool, season_id: int, series_id: int):
     """爬取UP主的视频信息
 
     UID: UP主的用户ID
@@ -65,7 +67,18 @@ def crawl(uid: str, max_videos: int, with_subtitle: bool):
 
     # 获取视频列表
     click.echo("\n正在获取视频列表...")
-    videos = api.get_all_user_videos(uid, max_videos)
+
+    if season_id:
+        # 获取指定合集的视频
+        click.echo(f"从合集 {season_id} 中获取视频...")
+        videos = api.get_season_videos(season_id)
+    elif series_id:
+        # 获取指定视频列表的视频
+        click.echo(f"从视频列表 {series_id} 中获取视频...")
+        videos = api.get_series_videos(series_id, uid)
+    else:
+        # 获取所有视频
+        videos = api.get_all_user_videos(uid, max_videos)
 
     if not videos:
         logger.error("未获取到任何视频")
@@ -284,6 +297,71 @@ def show(uid: str):
         click.echo("\n还没有分析结果")
 
     db.close()
+
+
+@cli.command()
+@click.argument('uid')
+def list_series(uid: str):
+    """列出UP主的所有合集和视频列表
+
+    UID: UP主的用户ID
+    """
+    logger.info(f"获取UP主 {uid} 的合集列表")
+
+    # 初始化
+    api = BilibiliAPI()
+
+    # 获取UP主信息
+    user_info = api.get_user_info(uid)
+    if user_info:
+        click.echo(f"\n✓ UP主: {user_info['name']}\n")
+
+    # 获取合集和视频列表
+    series_data = api.get_user_series_list(uid)
+
+    if not series_data:
+        click.echo("该UP主没有合集或视频列表")
+        return
+
+    # 显示合集列表
+    seasons_list = series_data.get("seasons_list", [])
+    if seasons_list:
+        click.echo(f"{'='*60}")
+        click.echo(f"合集列表 (共 {len(seasons_list)} 个)")
+        click.echo(f"{'='*60}\n")
+
+        for i, season in enumerate(seasons_list, 1):
+            meta = season.get("meta", {})
+            click.echo(f"{i}. {meta.get('name')}")
+            click.echo(f"   - 合集ID: {meta.get('season_id')}")
+            click.echo(f"   - 视频数: {meta.get('total')}")
+            if meta.get('description'):
+                click.echo(f"   - 描述: {meta.get('description')}")
+            click.echo()
+
+        click.echo("使用方法：")
+        click.echo(f"  python3 main.py crawl {uid} --season-id <合集ID> --with-subtitle")
+        click.echo()
+
+    # 显示视频列表
+    series_list = series_data.get("series_list", [])
+    if series_list:
+        click.echo(f"{'='*60}")
+        click.echo(f"视频列表 (共 {len(series_list)} 个)")
+        click.echo(f"{'='*60}\n")
+
+        for i, series in enumerate(series_list, 1):
+            meta = series.get("meta", {})
+            click.echo(f"{i}. {meta.get('name')}")
+            click.echo(f"   - 列表ID: {meta.get('series_id')}")
+            click.echo(f"   - 视频数: {meta.get('total')}")
+            if meta.get('description'):
+                click.echo(f"   - 描述: {meta.get('description')}")
+            click.echo()
+
+        click.echo("使用方法：")
+        click.echo(f"  python3 main.py crawl {uid} --series-id <列表ID> --with-subtitle")
+        click.echo()
 
 
 if __name__ == '__main__':

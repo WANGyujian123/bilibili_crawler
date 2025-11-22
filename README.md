@@ -80,32 +80,52 @@ source venv/bin/activate
 python3 main.py --help
 ```
 
-### 1. 爬取UP主内容
+### 1. 查看UP主的合集列表
 
-爬取UP主的视频信息：
-
-```bash
-python3 main.py crawl <UID>
-```
-
-同时下载字幕：
+查看UP主所有的合集和视频列表：
 
 ```bash
-python3 main.py crawl <UID> --with-subtitle
+python3 main.py list-series <UID>
 ```
 
-限制爬取数量：
-
-```bash
-python3 main.py crawl <UID> --max-videos 20
-```
+这会显示所有合集的ID和视频数量，方便你选择感兴趣的合集进行爬取。
 
 **如何获取UP主的UID：**
 1. 访问UP主的B站主页
 2. 查看URL，例如：`https://space.bilibili.com/123456`
 3. 其中的 `123456` 就是UID
 
-### 2. 下载字幕
+### 2. 爬取UP主内容
+
+**爬取所有视频：**
+
+```bash
+python3 main.py crawl <UID> --with-subtitle
+```
+
+**爬取指定合集的视频：**
+
+```bash
+# 先查看合集列表
+python3 main.py list-series <UID>
+
+# 然后爬取指定合集
+python3 main.py crawl <UID> --season-id <合集ID> --with-subtitle
+```
+
+**爬取指定视频列表：**
+
+```bash
+python3 main.py crawl <UID> --series-id <列表ID> --with-subtitle
+```
+
+**限制爬取数量：**
+
+```bash
+python3 main.py crawl <UID> --max-videos 20 --with-subtitle
+```
+
+### 3. 下载字幕
 
 为已爬取的视频单独下载字幕：
 
@@ -119,7 +139,7 @@ python3 main.py download-subtitle <UID>
 python3 main.py download-subtitle <UID> --max-videos 10
 ```
 
-### 3. 分析内容
+### 4. 分析内容
 
 使用Claude AI分析UP主的内容：
 
@@ -143,7 +163,7 @@ python3 main.py analyze <UID> --analysis-type style
 python3 main.py analyze <UID> --max-videos 20
 ```
 
-### 4. 查看结果
+### 5. 查看结果
 
 查看已保存的分析结果：
 
@@ -153,7 +173,23 @@ python3 main.py show <UID>
 
 ## 完整使用流程示例
 
-假设要分析UID为`123456`的UP主：
+### 示例1：分析UP主的某个合集
+
+```bash
+# 1. 查看UP主的所有合集
+python3 main.py list-series 9458053
+
+# 2. 爬取指定合集的视频和字幕（例如：高中物理必修一）
+python3 main.py crawl 9458053 --season-id 2352600 --with-subtitle
+
+# 3. 分析这个合集的内容
+python3 main.py analyze 9458053
+
+# 4. 查看分析结果
+python3 main.py show 9458053
+```
+
+### 示例2：分析UP主的所有视频
 
 ```bash
 # 1. 爬取UP主的视频信息（最多20个视频）
