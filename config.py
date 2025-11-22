@@ -16,10 +16,18 @@ CLAUDE_MODEL = "claude-sonnet-4-5-20250929"  # 使用最新的Claude模型
 
 # B站API配置
 BILIBILI_API_BASE = "https://api.bilibili.com"
+BILIBILI_COOKIE = os.getenv("BILIBILI_COOKIE", "")  # B站Cookie（可选）
 BILIBILI_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    "Referer": "https://www.bilibili.com"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Referer": "https://www.bilibili.com",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Origin": "https://www.bilibili.com"
 }
+
+# 如果有Cookie，添加到headers中
+if BILIBILI_COOKIE:
+    BILIBILI_HEADERS["Cookie"] = BILIBILI_COOKIE
 
 # 数据库配置
 DATABASE_PATH = os.getenv("DATABASE_PATH", str(BASE_DIR / "data" / "bilibili.db"))

@@ -36,10 +36,19 @@ CLAUDE_API_KEY=your_api_key_here
 
 # 如果使用代理站，填入代理地址
 CLAUDE_API_BASE_URL=https://api.your-proxy.com/v1
+
+# B站Cookie（可选，用于获取需要登录的字幕）
+BILIBILI_COOKIE=你的B站Cookie
 ```
 
-> - **官方API**：访问 [Anthropic Console](https://console.anthropic.com/) 获取密钥，不需要填写 `CLAUDE_API_BASE_URL`
-> - **代理站**：填入代理站提供的API密钥和代理地址
+> - **Claude API**：
+>   - **官方API**：访问 [Anthropic Console](https://console.anthropic.com/) 获取密钥
+>   - **代理站**：填入代理站提供的API密钥和代理地址
+>
+> - **B站Cookie**（可选）：
+>   - 某些视频的字幕需要登录才能访问
+>   - 如何获取Cookie：查看 [GET_COOKIE.md](GET_COOKIE.md)
+>   - 如果不配置，仍可爬取公开的字幕
 
 ### 3. 开始使用
 

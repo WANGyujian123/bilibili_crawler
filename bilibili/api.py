@@ -28,6 +28,7 @@ class BilibiliAPI:
         params = {"mid": uid}
 
         try:
+            time.sleep(0.5)  # 添加延迟避免频率限制
             response = self.session.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
