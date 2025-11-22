@@ -569,5 +569,133 @@ def query(bvid: str, output: str):
         db.close()
 
 
+@cli.command()
+@click.argument('uid')
+@click.option('--season-id', type=int, default=None, help='监控指定合集ID')
+@click.option('--series-id', type=int, default=None, help='监控指定视频列表ID')
+@click.option('--check-time', '-t', default='09:00', help='每日检查时间（格式：HH:MM）')
+@click.option('--once', is_flag=True, help='只检查一次，不启动定时任务')
+def monitor(uid: str, season_id: int, series_id: int, check_time: str, once: bool):
+    """监控UP主的新视频并发送邮件通知
+
+    UID: UP主的用户ID
+
+    该命令会定时检查UP主是否发布新视频，如果有新视频会自动：
+    1. 下载字幕
+    2. 进行AI分析（精简版）
+    3. 发送邮件通知
+
+    需要先在.env文件中配置邮箱信息。
+    """
+    import schedule
+    import time as time_module
+    from monitor import VideoMonitor, EmailNotifier
+
+    logger.info(f"开始监控UP主 {uid}")
+
+    # 获取UP主信息
+    db = Database()
+    api = BilibiliAPI()
+
+    # 获取或创建UP主信息
+    user_info = db.get_user(uid)
+    if not user_info:
+        logger.info("首次监控，获取UP主信息...")
+        user_data = api.get_user_info(uid)
+        if user_data:
+            db.save_user(user_data)
+            user_info = db.get_user(uid)
+        else:
+            click.echo(f"❌ 无法获取UP主 {uid} 的信息")
+            db.close()
+            return
+
+    uploader_name = user_info['name']
+    db.close()
+
+    # 初始化监控器和邮件发送器
+    monitor_obj = VideoMonitor(uid, season_id, series_id)
+    email_notifier = EmailNotifier()
+
+    def check_and_notify():
+        """检查新视频并发送通知"""
+        try:
+            # 检查新视频
+            new_videos = monitor_obj.check_new_videos()
+
+            if not new_videos:
+                logger.info("没有新视频，跳过通知")
+                return
+
+            click.echo(f"\n✨ 发现 {len(new_videos)} 个新视频！")
+
+            # 处理新视频（下载字幕+分析）
+            click.echo("正在下载字幕并分析...")
+            analyses = monitor_obj.process_new_videos(new_videos)
+
+            # 显示分析结果
+            for video in new_videos:
+                bvid = video.get('bvid')
+                title = video.get('title')
+                click.echo(f"\n📺 {title}")
+                click.echo(f"   BV号: {bvid}")
+                click.echo(f"   分析: {analyses.get(bvid, '暂无')[:100]}...")
+
+            # 发送邮件通知
+            if email_notifier.enabled:
+                click.echo("\n📧 正在发送邮件通知...")
+                success = email_notifier.send_video_notification(
+                    uploader_name, new_videos, analyses
+                )
+                if success:
+                    click.echo("✓ 邮件发送成功")
+                else:
+                    click.echo("❌ 邮件发送失败")
+            else:
+                click.echo("\n⚠️  邮件功能未启用，跳过发送")
+
+            click.echo(f"\n✓ 监控任务完成")
+
+        except Exception as e:
+            logger.error(f"监控任务执行失败: {e}")
+            click.echo(f"❌ 错误: {e}")
+
+    # 一次性检查模式
+    if once:
+        click.echo(f"📡 执行一次性检查...")
+        check_and_notify()
+        monitor_obj.close()
+        return
+
+    # 定时监控模式
+    click.echo(f"\n📡 启动定时监控...")
+    click.echo(f"👤 UP主: {uploader_name}")
+    if season_id:
+        click.echo(f"📂 监控合集: {season_id}")
+    elif series_id:
+        click.echo(f"📂 监控列表: {series_id}")
+    else:
+        click.echo(f"📂 监控范围: 所有视频")
+    click.echo(f"⏰ 每日检查时间: {check_time}")
+    click.echo(f"📧 邮件通知: {'已启用' if email_notifier.enabled else '未启用'}")
+    click.echo("\n按 Ctrl+C 停止监控\n")
+
+    # 首次立即执行一次
+    click.echo("⏱️  执行首次检查...")
+    check_and_notify()
+
+    # 设置定时任务
+    schedule.every().day.at(check_time).do(check_and_notify)
+
+    # 运行定时任务
+    try:
+        while True:
+            schedule.run_pending()
+            time_module.sleep(60)  # 每分钟检查一次
+    except KeyboardInterrupt:
+        click.echo("\n\n⏹️  监控已停止")
+        monitor_obj.close()
+
+
 if __name__ == '__main__':
     cli()

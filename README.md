@@ -225,6 +225,81 @@ python3 main.py query BV1WxnYzTEi2
 python3 main.py query BV1WxnYzTEi2 -o reports/比特币分析.txt
 ```
 
+### 7. 监控新视频（定时任务）
+
+**自动监控UP主的新视频更新，并发送邮件通知：**
+
+```bash
+# 监控所有新视频，每天9点检查
+python3 main.py monitor <UID>
+
+# 监控指定合集，自定义检查时间
+python3 main.py monitor <UID> --season-id <合集ID> --check-time 08:00
+
+# 监控指定视频列表
+python3 main.py monitor <UID> --series-id <列表ID>
+
+# 只检查一次（不启动定时任务）
+python3 main.py monitor <UID> --once
+```
+
+**功能说明**：
+- ✅ 自动检测新视频
+- ✅ 自动下载字幕
+- ✅ AI精简版分析（200字摘要）
+- ✅ 邮件通知（包含分析结果）
+- ✅ 结果保存到数据库
+
+**邮箱配置**（在.env文件中）：
+```env
+EMAIL_ENABLED=true
+EMAIL_SMTP_HOST=smtp.gmail.com
+EMAIL_SMTP_PORT=587
+EMAIL_SENDER=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password
+EMAIL_RECEIVER=your_email@gmail.com
+```
+
+**Gmail配置说明**：
+1. 登录 [Google账户](https://myaccount.google.com/)
+2. 启用"两步验证"
+3. 生成"应用专用密码"
+4. 将密码填入`EMAIL_PASSWORD`
+
+**示例**：
+```bash
+# 监控191640的商业财经合集，每天早上8点检查
+python3 main.py monitor 191640 --season-id 2910000 --check-time 08:00
+
+# 先测试一次（不启动定时任务）
+python3 main.py monitor 191640 --season-id 2910000 --once
+```
+
+**使用systemd设置开机自启**（可选）：
+```bash
+# 1. 创建服务文件
+sudo nano /etc/systemd/system/bilibili-monitor.service
+
+# 2. 添加以下内容（修改路径）：
+[Unit]
+Description=Bilibili Video Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=your_username
+WorkingDirectory=/path/to/bilibili_crawler
+ExecStart=/path/to/bilibili_crawler/venv/bin/python3 main.py monitor 191640 --season-id 2910000 --check-time 09:00
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+# 3. 启动服务
+sudo systemctl enable bilibili-monitor
+sudo systemctl start bilibili-monitor
+```
+
 ## 完整使用流程示例
 
 ### 示例1：分析UP主的某个合集

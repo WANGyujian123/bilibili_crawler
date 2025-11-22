@@ -40,3 +40,11 @@ LOG_DIR.mkdir(exist_ok=True)
 # 数据存储目录
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
+
+# 邮件通知配置
+EMAIL_ENABLED = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
+EMAIL_SMTP_HOST = os.getenv("EMAIL_SMTP_HOST", "smtp.gmail.com")
+EMAIL_SMTP_PORT = int(os.getenv("EMAIL_SMTP_PORT", "587"))
+EMAIL_SENDER = os.getenv("EMAIL_SENDER", "")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER", "")
