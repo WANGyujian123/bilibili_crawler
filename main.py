@@ -396,6 +396,97 @@ def list_series(uid: str):
 
 @cli.command()
 @click.argument('bvid')
+@click.option('--analysis-type', '-t',
+              type=click.Choice(['comprehensive', 'ideology', 'themes', 'style']),
+              default='comprehensive',
+              help='分析类型：comprehensive=综合分析, ideology=思想分析, themes=主题分析, style=风格分析')
+def analyze_video(bvid: str, analysis_type: str):
+    """分析单个视频的内容
+
+    BVID: 视频的BV号（如：BV1WxnYzTEi2）
+    """
+    logger.info(f"开始分析视频 {bvid}")
+    db = Database()
+
+    # 获取视频信息
+    cursor = db.cursor
+    cursor.execute("SELECT uid, title FROM videos WHERE bvid = ?", (bvid,))
+    video = cursor.fetchone()
+
+    if not video:
+        click.echo(f"❌ 未找到视频 {bvid}")
+        db.close()
+        return
+
+    uid, title = video
+
+    # 获取字幕
+    subtitle = db.get_video_subtitle(bvid)
+    if not subtitle:
+        click.echo(f"❌ 视频 {bvid} 没有字幕，无法分析")
+        db.close()
+        return
+
+    click.echo(f"\n视频: {title}")
+    click.echo(f"BV号: {bvid}")
+    click.echo("\n正在使用Claude AI进行分析...\n")
+
+    # 初始化分析器
+    try:
+        analyzer = ClaudeAnalyzer()
+    except ValueError as e:
+        logger.error(str(e))
+        click.echo(f"\n❌ 错误: {e}")
+        click.echo("请在.env文件中设置CLAUDE_API_KEY")
+        db.close()
+        return
+
+    # 执行分析（传入单个字幕的列表）
+    subtitles = [subtitle]
+
+    if analysis_type == 'ideology':
+        result = analyzer.analyze_ideology(subtitles, title)
+        if result:
+            db.save_analysis(uid, "思想分析", result, bvid)
+            click.echo("\n" + "="*60)
+            click.echo(f"思想分析结果:")
+            click.echo("="*60 + "\n")
+            click.echo(result)
+
+    elif analysis_type == 'themes':
+        result = analyzer.analyze_themes(subtitles)
+        if result:
+            db.save_analysis(uid, "主题分析", result, bvid)
+            click.echo("\n" + "="*60)
+            click.echo(f"主题分析结果:")
+            click.echo("="*60 + "\n")
+            click.echo(result)
+
+    elif analysis_type == 'style':
+        result = analyzer.analyze_style(subtitles)
+        if result:
+            db.save_analysis(uid, "风格分析", result, bvid)
+            click.echo("\n" + "="*60)
+            click.echo(f"风格分析结果:")
+            click.echo("="*60 + "\n")
+            click.echo(result)
+
+    else:  # comprehensive
+        results = analyzer.comprehensive_analysis(subtitles, title)
+        for analysis_name, result in results.items():
+            db.save_analysis(uid, analysis_name, result, bvid)
+            click.echo("\n" + "="*60)
+            click.echo(f"{analysis_name}:")
+            click.echo("="*60 + "\n")
+            click.echo(result)
+            click.echo()
+
+    db.close()
+    click.echo("\n✓ 分析完成！结果已保存到数据库")
+
+
+@cli.command()
+@click.argument('bvid')
 @click.option('--output', '-o', type=click.Path(), help='输出文件路径（留空则输出到终端）')
 def query(bvid: str, output: str):
     """查询单个视频的详细信息和字幕

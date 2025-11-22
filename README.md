@@ -141,7 +141,7 @@ python3 main.py download-subtitle <UID> --max-videos 10
 
 ### 4. 分析内容
 
-使用Claude AI分析UP主的内容：
+**分析整个UP主的内容：**
 
 ```bash
 # 综合分析（包括思想、主题、风格）
@@ -155,12 +155,31 @@ python3 main.py analyze <UID> --analysis-type themes
 
 # 仅风格分析
 python3 main.py analyze <UID> --analysis-type style
+
+# 指定分析的视频数量
+python3 main.py analyze <UID> --max-videos 20
 ```
 
-指定分析的视频数量：
+**分析单个视频：**
 
 ```bash
-python3 main.py analyze <UID> --max-videos 20
+# 综合分析单个视频
+python3 main.py analyze-video <BVID>
+
+# 仅分析主题
+python3 main.py analyze-video <BVID> --analysis-type themes
+
+# 仅分析风格
+python3 main.py analyze-video <BVID> --analysis-type style
+```
+
+**示例**：
+```bash
+# 分析BV1WxnYzTEi2这个视频
+python3 main.py analyze-video BV1WxnYzTEi2
+
+# 只分析这个视频的主题
+python3 main.py analyze-video BV1WxnYzTEi2 -t themes
 ```
 
 ### 5. 查看和导出结果
